@@ -1,7 +1,7 @@
 % Parameters
-imageSize = 512; % Image size in pixels
-numCircles = 8;
-numEllipses = 8;
+imageSize = 1024; % Image size in pixels
+numCircles = 32;
+numEllipses = 32;
 numObjects = numCircles+numEllipses; % Number of enclosed objects
 minCircleSize = 20; % Minimum size of objects
 maxCircleSize = 80; % Maximum size of objects
@@ -29,8 +29,8 @@ for i = 1:numObjects
         % Random size
         size = randi([minCircleSize, maxCircleSize]);
         objects(i,3) = size/2;
-        objects(i,1) = randi([1+uint8(size/2), imageSize-uint8(size/2)]);
-        objects(i,2) = randi([1+uint8(size/2), imageSize-uint8(size/2)]);
+        objects(i,1) = randi([1+uint64(size/2), imageSize-uint64(size/2)]);
+        objects(i,2) = randi([1+uint64(size/2), imageSize-uint64(size/2)]);
         center = [objects(i,1), objects(i,2)];
         
         
@@ -38,8 +38,8 @@ for i = 1:numObjects
             dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
     
                 while any(dist < (objects(1:i-1,3) + size/2)+10)
-                    objects(i,1) = randi([1+uint8(max(objects(:,3))), imageSize-uint8(max(objects(:,3)))]);
-                    objects(i,2) = randi([1+uint8(max(objects(:,3))), imageSize-uint8(max(objects(:,3)))]);
+                    objects(i,1) = randi([1+uint64(size/2), imageSize-uint64(size/2)]);
+                    objects(i,2) = randi([1+uint64(size/2), imageSize-uint64(size/2)]);
                     center = [objects(i,1), objects(i,2)];
                     dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
                 end
@@ -49,7 +49,7 @@ for i = 1:numObjects
                 
                 % Apply intensity to circle region
                 canvas(mask) = intensity(:,:,1);
-                imshow(uint8(canvas), [])
+                imshow(uint64(canvas), [])
     else
         majorAxis = randi([minEllipseMajor, maxEllipseMajor]);
         minorAxis = majorAxis*ellipseAspect;
@@ -91,7 +91,7 @@ for i = 1:numObjects
             
             % Apply intensity to circle region
             canvas(mask) = intensity(:,:,1);
-            imshow(uint8(canvas), [])
+            imshow(uint64(canvas), [])
         
     end
 end
