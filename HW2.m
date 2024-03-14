@@ -49,7 +49,7 @@ for i = 1:numObjects
                 
                 % Apply intensity to circle region
                 canvas(mask) = intensity(:,:,1);
-                imshow(uint64(canvas), [])
+                imshow(uint8(canvas), [])
     else
         majorAxis = randi([minEllipseMajor, maxEllipseMajor]);
         minorAxis = majorAxis*ellipseAspect;
@@ -91,7 +91,7 @@ for i = 1:numObjects
             
             % Apply intensity to circle region
             canvas(mask) = intensity(:,:,1);
-            imshow(uint64(canvas), [])
+            imshow(uint8(canvas), [])
         
     end
 end
