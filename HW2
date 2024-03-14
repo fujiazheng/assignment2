@@ -1,0 +1,98 @@
+% Parameters
+imageSize = 512; % Image size in pixels
+numCircles = 8;
+numEllipses = 8;
+numObjects = numCircles+numEllipses; % Number of enclosed objects
+minCircleSize = 20; % Minimum size of objects
+maxCircleSize = 80; % Maximum size of objects
+minEllipseMajor = 40;
+maxEllipseMajor = 100;
+ellipseAspect =0.8;
+intensityRange = [100,180]; 
+
+
+% Create a blank canvas
+canvas = zeros(imageSize,imageSize,3);
+
+% Object list
+objects = NaN(numObjects,3);
+
+
+%% Generate enclosed objects (circles+ellipses)
+for i = 9:numObjects
+    % Random intensity
+    intensity = randi([intensityRange(1), intensityRange(2)]);
+    % Random position
+
+
+    if i <=numCircles
+        % Random size
+        size = randi([minCircleSize, maxCircleSize]);
+        objects(i,3) = size/2;
+        objects(i,1) = randi([1+maxCircleSize/2, imageSize-maxCircleSize/2]);
+        objects(i,2) = randi([1+maxCircleSize/2, imageSize-maxCircleSize/2]);
+        center = [objects(i,1), objects(i,2)];
+        
+        
+        if i > 1
+            dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
+    
+                while any(dist < (objects(1:i-1,3) + size/2)+10)
+                    objects(i,1) = randi([1+maxCircleSize/2, imageSize-maxCircleSize/2]);
+                    objects(i,2) = randi([1+maxCircleSize/2, imageSize-maxCircleSize/2]);
+                    center = [objects(i,1), objects(i,2)];
+                    dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
+                end
+    
+                [X, Y] = meshgrid(1:imageSize, 1:imageSize);
+                mask = (X-center(1)).^2 + (Y-center(2)).^2 <= (size/2)^2;
+                
+                % Apply intensity to circle region
+                canvas(mask) = intensity(:,:,1);
+                imshow(uint8(canvas), [])
+        end
+    elseif i<= numObjects
+        objects(i,1) = randi([1+maxEllipseMajor, imageSize-maxEllipseMajor]);
+        objects(i,2) = randi([1+maxEllipseMajor, imageSize-maxEllipseMajor]);
+        center = [objects(i,1),objects(i,2)];
+        majorAxis = randi([minEllipseMajor, maxEllipseMajor]);
+        minorAxis = majorAxis*ellipseAspect;
+        axisSelect = randi([1,2]);
+        if axisSelect ==1
+            a = majorAxis;
+            b = minorAxis;
+        else
+            a = minorAxis;
+            b = majorAxis;
+        end
+        objects(i,3) = majorAxis;
+        if i>32
+            dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
+            while any(dist < (objects(1:i-1,3) + majorAxis))
+                majorAxis = randi([minEllipseMajor, maxEllipseMajor]);
+                minorAxis = majorAxis*0.8;
+                axisSelect = randi([1,2]);
+                if axisSelect ==1
+                    a = majorAxis;
+                    b = minorAxis;
+                else
+                    a = minorAxis;
+                    b = majorAxis;
+                end
+                objects(i,3) = majorAxis;
+                objects(i,1) = randi([1+maxEllipseMajor, imageSize-maxEllipseMajor]);
+                objects(i,2) = randi([1+maxEllipseMajor, imageSize-maxEllipseMajor]);
+                center = [objects(i,1), objects(i,2)];
+                dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
+            end
+            [X, Y] = meshgrid(1:imageSize, 1:imageSize);
+            mask = ((X-center(1)).^2)./a^2 + ((Y-center(2)).^2)./b^2 <= 1;
+            
+            % Apply intensity to circle region
+            canvas(mask) = intensity(:,:,1);
+            imshow(uint8(canvas), [])
+        end
+    end
+end
+
+
