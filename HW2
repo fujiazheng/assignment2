@@ -1,5 +1,5 @@
 % Parameters
-imageSize = 512; % Image size in pixels
+imageSize = 1024; % Image size in pixels
 numCircles = 8;
 numEllipses = 8;
 numObjects = numCircles+numEllipses; % Number of enclosed objects
@@ -19,13 +19,13 @@ objects = NaN(numObjects,3);
 
 
 %% Generate enclosed objects (circles+ellipses)
-for i = 9:numObjects
+for i = 1:numObjects
     % Random intensity
     intensity = randi([intensityRange(1), intensityRange(2)]);
     % Random position
 
 
-    if i <=numCircles
+    if i <=numObjects/2
         % Random size
         size = randi([minCircleSize, maxCircleSize]);
         objects(i,3) = size/2;
@@ -43,15 +43,14 @@ for i = 9:numObjects
                     center = [objects(i,1), objects(i,2)];
                     dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
                 end
-    
+        end
                 [X, Y] = meshgrid(1:imageSize, 1:imageSize);
                 mask = (X-center(1)).^2 + (Y-center(2)).^2 <= (size/2)^2;
                 
                 % Apply intensity to circle region
                 canvas(mask) = intensity(:,:,1);
                 imshow(uint8(canvas), [])
-        end
-    elseif i<= numObjects
+    else
         objects(i,1) = randi([1+maxEllipseMajor, imageSize-maxEllipseMajor]);
         objects(i,2) = randi([1+maxEllipseMajor, imageSize-maxEllipseMajor]);
         center = [objects(i,1),objects(i,2)];
@@ -66,7 +65,7 @@ for i = 9:numObjects
             b = majorAxis;
         end
         objects(i,3) = majorAxis;
-        if i>32
+        if i>numCircles
             dist = sqrt((objects(1:i-1,1) - center(1)).^2+(objects(1:i-1,2)-center(2)).^2);
             while any(dist < (objects(1:i-1,3) + majorAxis))
                 majorAxis = randi([minEllipseMajor, maxEllipseMajor]);
