@@ -95,5 +95,9 @@ for i = 1:numObjects
         
     end
 end
-
+%apply a PSF function to blur the  image
+psf_size=10;
+g_filter = fspecial('gaussian', [10 10] , psf_size);
+blurred_image= imfilter(canvas, g_filter);
+imshow(uint8(blurred_image),[]);
 
