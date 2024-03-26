@@ -1,23 +1,29 @@
-numObjects=16;
+clear;
+clc;
+close all;
+numObjects=32;
 imageSize=512;
 numCircles=numObjects/2;
 numEllipses=numObjects/2;
 mask=cell(numObjects,60); % initialize 60 frames
 canvas=zeros(imageSize,imageSize,3);
 objects=zeros(numObjects,3,60); % initialize object in each frame
+ellipseAspect =0.8;
+% c=1;
+% mask(:,c)=shapeGen(numCircles,numEllipses);
 
 for c=1: 60
     if c==1
         mask(:,c)=shapeGen(numCircles,numEllipses);
     else
         for i=1:numObjects
-            scale=randi(8, 12)*0.1;
+            scale=randi([8,12])*0.1;
             objects(i,3,c) = objects(i,3,c-1)*scale;
             a=objects(i,3,c);
             b = a*ellipseAspect;
             mask(i,c)=((X-center(1)).^2)./a^2 + ((Y-center(2)).^2)./b^2 <= 1;
             while corr2(mask(i,c), mask(i,c-1)) < 0.7
-                scale=randi(8, 12)*0.1;
+                scale=randi([8,12])*0.1;
                 objects(i,3,c) = objects(i,3,c-1)*scale;
                 a=objects(i,3,c);
                 b = a*ellipseAspect;
@@ -31,6 +37,7 @@ for c=1: 60
 
 
 
+    end
 
 
 
