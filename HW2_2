@@ -20,7 +20,7 @@ for c=1: 60
             scale=randi([8,12])*0.1;
             objects(i,3,c) = objects(i,3,c-1)*scale;
             a=objects(i,3,c);
-            b = a*ellipseAspect;
+            b = a.*ellipseAspect;
             mask(i,c)=((X-center(1)).^2)./a^2 + ((Y-center(2)).^2)./b^2 <= 1;
             while corr2(mask(i,c), mask(i,c-1)) < 0.7
                 scale=randi([8,12])*0.1;
@@ -31,7 +31,7 @@ for c=1: 60
             end
             angle=rand(0,2*pi,'double');
             vel=4;
-            %do we only move up and down or also diagonal
+            %starting here
         end
 
 
