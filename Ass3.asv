@@ -55,14 +55,14 @@ for i=1:numFrame
 end
 
 
-
-%for finding peaks
+% 
+% % for finding peaks
 % exampleFrame=denoisedFrame(:,:,1);
 % p=FastPeakFind(exampleFrame);
 % imagesc(exampleFrame); hold on;
 % plot(p(1:2:end),p(2:2:end),'r+');
 % position=[p(1:2:end),p(2:2:end)];
-
+% 
 % frame_exp=frame(:,:,1);
 % figure;
 % imshow(uint8(frame(:,:,1)));
@@ -72,7 +72,6 @@ end
 % imshow(uint8(frame(:,:,2)));
 % figure;
 % imshow(uint8(denoisedFrame(:,:,2)))
-% 
 
 
 
