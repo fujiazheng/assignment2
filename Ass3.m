@@ -13,6 +13,10 @@ frame=zeros(512,512,numFrame-1);
 denoisedFrame=zeros(512,512,numFrame);
 denoisedFrame2=zeros(512,512,numFrame);
 comparison=zeros(1, 12,numFrame);
+L = zeros(512,512,18);
+coord = zeros(12,2,18);
+objectCrop = cell(numFrame,12);
+prevObjects = cell(numFrame-1,12);
 
 for i=1:numFrame
     frame(:,:,i)=imread("Simulate_movie_hw2.tif",i);
@@ -26,31 +30,28 @@ for i=1:numFrame
     center(:,:,i) = regionprops(denoisedFrame2(:,:,i), 'centroid');
     s = regionprops(logical(denoisedFrame2(:,:,i)), 'Centroid');
     bounding = regionprops(logical(denoisedFrame2(:,:,i)), 'BoundingBox');
-    centroids = cat(1,s.Centroid);
+    centroids(:,:,i) = cat(1,s.Centroid);
     hold on
-    plot(centroids(:,1),centroids(:,2),'*b')
+    plot(centroids(:,1,i),centroids(:,2,i),'*b')
     hold off
-    L = bwlabel(logical(denoisedFrame2(:,:,i)),8);
-    objectCrop = cell(1,length(centroids));
-    prevObjects = cell(1,length(centroids));
+    L(:,:,i) = bwlabel(logical(denoisedFrame2(:,:,i)),8);
+
     
-    for j = 1:length(centroids)
-        objectCrop{1,j} = num2cell(imcrop(denoisedFrame2(:,:,i), bounding(j).BoundingBox));
+    for j = 1:height(centroids)
+        objectCrop{i,j} = num2cell(imcrop(denoisedFrame2(:,:,i), bounding(j,:).BoundingBox));
         
-        % if i > 1 
-        %     if j > 1
-        %         for k = 1:length(centroids)
-        %             prevObjects{1,j} = objectCrop{1,j-1};
-        %             size1 = size(cell2mat(objectCrop{1,j}));
-        %             size0 =size(cell2mat(prevObjects{1,j}));
-        %             padded1 = padarray(cell2mat(objectCrop{1,j}), ceil(([15 15]-size1)/2) , 0,'pre');
-        %             padded1= padarray(padded1, floor(([15 15]-size1)/2), 0,'post');
-        %             padded2 = padarray(cell2mat(prevObjects{1,j}), ceil(([15 15]-size0)/2) , 0,'pre');
-        %             padded2= padarray(padded2, floor(([15 15]-size0)/2), 0,'post');
-        %             comparison(1,j,i) = corr2(padded1,padded2);
-        %         end
-        %     end
-        % end
+        if i > 1 
+            prevObjects{i,j} = objectCrop{i-1,j};
+                for k = 1:height(centroids)
+                    size1 = size(cell2mat(objectCrop{i,k}));
+                    size0 =size(cell2mat(prevObjects{i,j}));
+                    padded1 = padarray(cell2mat(objectCrop{i,k}), ceil(([15 15]-size1)/2) , 0,'pre');
+                    padded1= padarray(padded1, floor(([15 15]-size1)/2), 0,'post');
+                    padded2 = padarray(cell2mat(prevObjects{i,j}), ceil(([15 15]-size0)/2) , 0,'pre');
+                    padded2 = padarray(padded2, floor(([15 15]-size0)/2), 0,'post');
+                    comparison(k,j,i) = corr2(padded1,padded2);
+                end
+        end
     end
 
 
