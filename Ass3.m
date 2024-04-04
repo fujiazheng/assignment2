@@ -2,9 +2,6 @@ clear;
 clc;
 close all;
 % initialization of the parameters for the function
-global mat sigma   
-mat = 15;                                      
-sigma = 3;
 numFrame=18;
 position=cell(1,numFrame);
 %initialize the image array
@@ -17,6 +14,7 @@ L = zeros(512,512,18);
 coord = zeros(12,2,18);
 objectCrop = cell(numFrame,12);
 prevObjects = cell(numFrame-1,12);
+
 
 for i=1:numFrame
     frame(:,:,i)=imread("Simulate_movie_hw2.tif",i);
@@ -42,6 +40,7 @@ for i=1:numFrame
         
         if i > 1 
             prevObjects{i,j} = objectCrop{i-1,j};
+
                 for k = 1:height(centroids)
                     size1 = size(cell2mat(objectCrop{i,k}));
                     size0 =size(cell2mat(prevObjects{i,j}));
@@ -77,6 +76,8 @@ end
 % figure;
 % imshow(uint8(denoisedFrame(:,:,2)))
 % 
+
+
 
 
 
