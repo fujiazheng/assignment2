@@ -6,6 +6,8 @@ numFrame=18;
 position=cell(1,numFrame);
 %initialize the image array
 frame=zeros(512,512,numFrame-1);
+%index variable copy the index in different frames
+index=zeros(numFrame,12);
 
 denoisedFrame=zeros(512,512,numFrame);
 denoisedFrame2=zeros(512,512,numFrame);
@@ -39,6 +41,12 @@ for i=1:numFrame
         objectCrop{i,j} = num2cell(imcrop(denoisedFrame2(:,:,i), bounding(j,:).BoundingBox));
         
         if i > 1 
+        %% Compare the distance
+            dist= (centroids(j,1,i)-centroids(:,1,i-1)).^2 + (centroids(j,2,i)-centroids(:,2,i-1)).^2;
+            k=find(dist==min(dist(:)));
+            index(i,j)=index(i-1,k);
+            
+        %% below is for correlation
             prevObjects{i,j} = objectCrop{i-1,j};
 
                 for k = 1:height(centroids)
