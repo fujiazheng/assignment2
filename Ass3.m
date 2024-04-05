@@ -17,7 +17,6 @@ coord = zeros(12,2,18);
 objectCrop = cell(numFrame,12);
 prevObjects = cell(numFrame-1,12);
 
-
 for i=1:numFrame
     frame(:,:,i)=imread("Simulate_movie_hw2.tif",i);
     figure(i)
@@ -31,6 +30,7 @@ for i=1:numFrame
     s = regionprops(logical(denoisedFrame2(:,:,i)), 'Centroid');
     bounding = regionprops(logical(denoisedFrame2(:,:,i)), 'BoundingBox');
     centroids(:,:,i) = cat(1,s.Centroid);
+
     hold on
     plot(centroids(:,1,i),centroids(:,2,i),'*b')
     hold off
@@ -40,15 +40,21 @@ for i=1:numFrame
     for j = 1:height(centroids)
         objectCrop{i,j} = num2cell(imcrop(denoisedFrame2(:,:,i), bounding(j,:).BoundingBox));
         
+        if i == 1
+            order = [2, 5, 6, 8, 10, 9, 7, 12, 11, 4, 3, 1];
+            orderedCentroids(order,:,i) = centroids(:,:,i);
+            index(i,j)=j;
+            list = orderedCentroids;
+        end
         if i > 1 
         %% Compare the distance
             dist= (centroids(j,1,i)-centroids(:,1,i-1)).^2 + (centroids(j,2,i)-centroids(:,2,i-1)).^2;
             k=find(dist==min(dist(:)));
             index(i,j)=index(i-1,k);
             
+            
         %% below is for correlation
             prevObjects{i,j} = objectCrop{i-1,j};
-
                 for k = 1:height(centroids)
                     size1 = size(cell2mat(objectCrop{i,k}));
                     size0 =size(cell2mat(prevObjects{i,j}));
@@ -60,11 +66,26 @@ for i=1:numFrame
                 end
         end
     end
+    if i>1
+    orderedCentroids(order,:,i) = centroids(index(i,:),:,i);
+    list = cat(1,list, orderedCentroids(:,:,i));
+    end
 
 
 
 end
 
+
+%% Error
+reorder = list(1:12:end,:);
+for z=2:12
+reorder = cat(1, reorder, list(z:12:end,:));
+end
+
+GT_table = readtable("ground_truth_positions.xlsx");
+
+errorX = ((reorder(:,1)-GT_table(:,4))./GT_table(:,4)).*100;
+errorY = ((reorder(:,2)-GT_table(:,3))./GT_table(:,3)).*100;
 
 
 %for finding peaks
@@ -84,10 +105,3 @@ end
 % figure;
 % imshow(uint8(denoisedFrame(:,:,2)))
 % 
-
-
-
-
-
-
-
