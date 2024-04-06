@@ -29,7 +29,10 @@ for i=1:numFrame
     center(:,:,i) = regionprops(denoisedFrame2(:,:,i), 'centroid');
     s = regionprops(logical(denoisedFrame2(:,:,i)), 'Centroid');
     bounding = regionprops(logical(denoisedFrame2(:,:,i)), 'BoundingBox');
+    ss = regionprops(logical(denoisedFrame2(:,:,i)),'BoundingBox');
+    sizes(:,:,i) = cat(1,ss.BoundingBox)
     centroids(:,:,i) = cat(1,s.Centroid);
+
 
     hold on
     plot(centroids(:,1,i),centroids(:,2,i),'*b')
@@ -71,6 +74,13 @@ for i=1:numFrame
     list = cat(1,list, orderedCentroids(:,:,i));
     end
 
+IDvector(:,:,i) = horzcat(centroids(:,:,i),sizes(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
+
+if i >= 2
+oldIDvector = IDvector(:,:,i-1);
+newIDVector = IDvector(:,:,i);
+correlation_coeff(:,:,i) = corrcoef(oldIDvector,newIDVector)
+end
 
 
 end
