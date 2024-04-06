@@ -76,13 +76,18 @@ for i=1:numFrame
 
 IDvector(:,:,i) = horzcat(centroids(:,:,i),sizes(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
 
-if i >= 2
-oldIDvector = IDvector(:,:,i-1);
-newIDVector = IDvector(:,:,i);
-correlation_coeff(:,:,i) = corrcoef(oldIDvector,newIDVector)
-end
-
-
+    
+        for c=2:12
+            for d = 1:12
+                if i >= 2
+                oldIDvector = IDvector(:,:,i-1);
+                newIDVector = IDvector(:,:,i);
+                oldIDobject = IDvector(c-1,:,i-1);
+                newIDobject = IDvector(c,:,i);
+                correlation_coeffs(:,:,i) = corrcoef(newIDobject,IDvector(d,:,i-1));
+                end
+            end    
+        end
 end
 
 
