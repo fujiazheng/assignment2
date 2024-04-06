@@ -9,6 +9,8 @@ frame=zeros(512,512,numFrame-1);
 %index variable copy the index in different frames
 index=zeros(numFrame,12);
 
+numObjects = 12;
+
 denoisedFrame=zeros(512,512,numFrame);
 denoisedFrame2=zeros(512,512,numFrame);
 comparison=zeros(1, 12,numFrame);
@@ -76,7 +78,6 @@ for i=1:numFrame
 
 IDvector(:,:,i) = horzcat(centroids(:,:,i),sizes(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
 
-    
         for c=2:12
             for d = 1:12
                 if i >= 2
@@ -101,6 +102,24 @@ GT_table = readtable("ground_truth_positions.xlsx");
 
 errorX = ((reorder(:,1)-GT_table(:,4))./GT_table(:,4)).*100;
 errorY = ((reorder(:,2)-GT_table(:,3))./GT_table(:,3)).*100;
+
+%% False negative test
+for i = 1:numObjects
+    for j = 1:numFrame
+        for k = 1:numObjects*numFrame
+GT_X = GT_table{k,4};
+GT_Y = GT_table{k,3};
+
+tracked_pos_x = IDvector(i,1,j);
+tracked_pos_y = IDvector(i,2,j);
+
+distance(i) = sqrt((tracked_pos_x - GT_X)^2 + (tracked_pos_y - GT_Y)^2);
+
+error_percentage(k) = (distance / norm([GT_X, GT_Y])) * 100;
+        end
+    end
+end
+
 
 
 %for finding peaks
