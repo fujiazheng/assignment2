@@ -1,3 +1,4 @@
+tic
 clear;
 clc;
 close all;
@@ -147,3 +148,4 @@ disp(['There are ', num2str(false_negative_count), 'false negatives.'])
 % figure;
 % imshow(uint8(denoisedFrame(:,:,2)))
 % 
+toc
