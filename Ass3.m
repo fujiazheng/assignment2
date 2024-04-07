@@ -113,14 +113,22 @@ GT_Y = GT_table{k,3};
 tracked_pos_x = IDvector(i,1,j);
 tracked_pos_y = IDvector(i,2,j);
 
-distance(i) = sqrt((tracked_pos_x - GT_X)^2 + (tracked_pos_y - GT_Y)^2);
+error_percentage(k) = (dist(i)/ sqrt((tracked_pos_x-GT_X)^2 + (tracked_pos_y-GT_Y)^2))*100; %dist array from earlier step
 
-error_percentage(k) = (distance / norm([GT_X, GT_Y])) * 100;
+false_negative_count = 0;
+
+if error_percentage > 10
+    disp(['Object ', num2str(i), ' is not a false negative.'])
+else
+    false_negative_count = false_negative_count + 1;
+    disp(['Object ', num2str(i), ' is a false negative.']);
+end
+
         end
     end
 end
 
-
+disp(['There are ', num2str(false_negative_count), 'false negatives.'])
 
 %for finding peaks
 % exampleFrame=denoisedFrame(:,:,1);
