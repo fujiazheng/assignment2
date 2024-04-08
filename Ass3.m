@@ -1,4 +1,4 @@
-tStart = tic;
+tStart = tic; % start the time of the code so we can determine efficiency of code wrt time
 
 for avg = 1:5
     clearvars -except tStart;
@@ -12,10 +12,10 @@ for avg = 1:5
     %index variable copy the index in different frames
     index=zeros(numFrame,12);
     
-    numObjects = 12;
+    numObjects = 12; % initialize number of objects in the images
     
-    denoisedFrame=zeros(512,512,numFrame);
-    denoisedFrame2=zeros(512,512,numFrame);
+    denoisedFrame=zeros(512,512,numFrame); 
+    denoisedFrame2=zeros(512,512,numFrame); 
     comparison=zeros(1, 12,numFrame);
     L = zeros(512,512,18);
     coord = zeros(12,2,18);
@@ -24,25 +24,29 @@ for avg = 1:5
     GT_table = readtable("ground_truth_positions.xlsx",'ReadVariableNames',false);
     
     for i=1:numFrame
-        frame(:,:,i)=imread("Simulate_movie_hw2.tif",i);
+        frame(:,:,i)=imread("Simulate_movie_hw2.tif",i); % have the code read all the frames of the code
         
         denoisedFrame(:,:,i)=medfilt2(frame(:,:,i), [5,5]);
         % h = [-1 -1 -1;-1 8 -1;-1 -1 -1];
         % denoisedFrame2(:,:,i) = imfilter(denoisedFrame(:,:,i),h);
         denoisedFrame2(:,:,i) = imbinarize(denoisedFrame(:,:,i)./255, 'global');
         
-       
+       %each of these parameters will be used for the ID vector. We figured
+       %that the more parameters for the objects that we have, the better
+       %the correlation coefficient accuracy will be. Therefore, we chose 4
+       %parameters and will use all four to compare each of the objects
         center(:,:,i) = regionprops(denoisedFrame2(:,:,i), 'centroid');
         s = regionprops(logical(denoisedFrame2(:,:,i)), 'Centroid');
         bounding = regionprops(logical(denoisedFrame2(:,:,i)), 'BoundingBox');
         ss = regionprops(logical(denoisedFrame2(:,:,i)),'BoundingBox');
         sss = regionprops(logical(denoisedFrame2(:,:,i)), 'Circularity');
         ssss = regionprops(logical(denoisedFrame2(:,:,i)), 'Eccentricity');
-        sizes(:,:,i) = cat(1,ss.BoundingBox);
-        centroids(:,:,i) = cat(1,s.Centroid);
-        circularity(:,:,i) = cat(1,sss.Circularity);
-        eccentricity(:,:,i) = cat(1,ssss.Eccentricity);
-    %% Plot
+        sizes(:,:,i) = cat(1,ss.BoundingBox); %extract sizes of objects based on bounding boxes
+        centroids(:,:,i) = cat(1,s.Centroid); % extract centroid x and y position based on centroids
+        circularity(:,:,i) = cat(1,sss.Circularity); % extract circularity of each object
+        eccentricity(:,:,i) = cat(1,ssss.Eccentricity); % extract eccentricity of each object
+    
+        %% Plot - we did this so we could visualize our centroids/objects
         % figure(i)
         % imshow(denoisedFrame2(:,:,i))
         % hold on
@@ -55,6 +59,13 @@ for avg = 1:5
         for j = 1:height(centroids)
             objectCrop{i,j} = num2cell(imcrop(denoisedFrame2(:,:,i), bounding(j,:).BoundingBox));
             
+% here, the order of particles was initialized so that we can reorder the
+% arbitrary ordering that MATLAB did on its own for each particle. This way
+% we could compare the distances of the objects. However, this was not
+% needed for the correlation coefficient calculations as the objects would
+% be compared to all objects so the order of them being compared should not
+% matter.
+
             if i == 1
                 order = [2, 5, 6, 8, 10, 9, 7, 12, 11, 4, 3, 1];
                 orderedCentroids(order,:,i) = centroids(:,:,i);
@@ -63,7 +74,7 @@ for avg = 1:5
                 IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
             end
             if i > 1 
-            %% Compare the distance
+            %% Compare the correlation coefficients
                     IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
 
                 for k = 1:height(centroids)
