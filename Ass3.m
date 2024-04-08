@@ -13,19 +13,20 @@ for avg = 1:5
     index=zeros(numFrame,12);
     
     numObjects = 12; % initialize number of objects in the images
-    
+
+    %create denoised images
     denoisedFrame=zeros(512,512,numFrame); 
     denoisedFrame2=zeros(512,512,numFrame); 
-    comparison=zeros(1, 12,numFrame);
     L = zeros(512,512,18);
     coord = zeros(12,2,18);
+    %create a matrix to store 12 particles in different frames
     objectCrop = cell(numFrame,12);
     prevObjects = cell(numFrame-1,12);
     GT_table = readtable("ground_truth_positions.xlsx",'ReadVariableNames',false);
     
     for i=1:numFrame
-        frame(:,:,i)=imread("Simulate_movie_hw2.tif",i); % have the code read all the frames of the code
-        
+        frame(:,:,i)=imread("Simulate_movie_hw2.tif",i); % have the code read all the frames of the images
+        %remove the salt and pepper noise
         denoisedFrame(:,:,i)=medfilt2(frame(:,:,i), [5,5]);
         % h = [-1 -1 -1;-1 8 -1;-1 -1 -1];
         % denoisedFrame2(:,:,i) = imfilter(denoisedFrame(:,:,i),h);
@@ -71,36 +72,23 @@ for avg = 1:5
                 orderedCentroids(order,:,i) = centroids(:,:,i);
                 index(i,j)=j;
                 list = orderedCentroids;
-                IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
+                IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and circularity and eccentricity)
             end
             if i > 1 
             %% Compare the correlation coefficients
                     IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
-
-                for k = 1:height(centroids)
-                    dist(j,k,i)= sqrt((centroids(j,1,i)-centroids(k,1,i-1)).^2 + (centroids(j,2,i)-centroids(k,2,i-1)).^2);
+            %Go through each object in the previous frame
+                for k = 1:height(centroid)
                     oldIDobject = IDvector(k,:,i-1);
                     newIDobject = IDvector(j,:,i);
-                    temp = corrcoef(newIDobject,oldIDobject);
+                    temp = corrcoef(newIDobject,oldIDobject); %calculate the correlation coefficient between the new object with each particle in the previous frame
                     correlation_coeffs(k,j,i) = temp(1,2);
-                    k = find(correlation_coeffs(:,j,i)==max(correlation_coeffs(:,j,i)));
+                    k = find(correlation_coeffs(:,j,i)==max(correlation_coeffs(:,j,i))); % dupliate the particle index of the one that has the highest correlation coefficient
                 end
                 
                 index(i,j)=index(i-1,k);
                 
                 
-                
-            %% Ignore
-                % prevObjects{i,j} = objectCrop{i-1,j};
-                %     for k = 1:height(centroids)
-                %         size1 = size(cell2mat(objectCrop{i,k}));
-                %         size0 =size(cell2mat(prevObjects{i,j}));
-                %         padded1 = padarray(cell2mat(objectCrop{i,k}), ceil(([15 15]-size1)/2) , 0,'pre');
-                %         padded1= padarray(padded1, floor(([15 15]-size1)/2), 0,'post');
-                %         padded2 = padarray(cell2mat(prevObjects{i,j}), ceil(([15 15]-size0)/2) , 0,'pre');
-                %         padded2 = padarray(padded2, floor(([15 15]-size0)/2), 0,'post');
-                %         comparison(k,j,i) = corr2(padded1,padded2);
-                %     end
             end
         end   
         if i>1
@@ -110,18 +98,14 @@ for avg = 1:5
         end
         
     end
-    
+
+    % Here we calculate the false negative and false positive values
     
     %% Error
     reorder = list(1:12:end,:);
     for z=2:12
     reorder = cat(1, reorder, list(z:12:end,:));
     end
-     
-    
-    
-    errorX = ((reorder(:,1)-GT_table(:,4))./GT_table(:,4)).*100;
-    errorY = ((reorder(:,2)-GT_table(:,3))./GT_table(:,3)).*100;
     
     % Initialize false negative count
     false_negative_count = 0;
