@@ -54,8 +54,10 @@ for i=1:numFrame
         end
         if i > 1 
         %% Compare the distance
-            dist= (centroids(j,1,i)-centroids(:,1,i-1)).^2 + (centroids(j,2,i)-centroids(:,2,i-1)).^2;
-            k=find(dist==min(dist(:)));
+            for k = 1:height(centroids)
+                dist(j,k,i)= sqrt((centroids(j,1,i)-centroids(k,1,i-1)).^2 + (centroids(j,2,i)-centroids(k,2,i-1)).^2);
+                k=find(dist(j,:,i)==min(dist(j,:,i)));
+            end
             index(i,j)=index(i-1,k);
             
             
@@ -104,32 +106,46 @@ GT_table = readtable("ground_truth_positions.xlsx");
 errorX = ((reorder(:,1)-GT_table(:,4))./GT_table(:,4)).*100;
 errorY = ((reorder(:,2)-GT_table(:,3))./GT_table(:,3)).*100;
 
-%% False negative test
-for i = 1:numObjects
-    for j = 1:numFrame
-        for k = 1:numObjects*numFrame
-GT_X = GT_table{k,4};
-GT_Y = GT_table{k,3};
-
-tracked_pos_x = IDvector(i,1,j);
-tracked_pos_y = IDvector(i,2,j);
-
-error_percentage(k) = (dist(i)/ sqrt((tracked_pos_x-GT_X)^2 + (tracked_pos_y-GT_Y)^2))*100; %dist array from earlier step
-
+% Initialize false negative count
 false_negative_count = 0;
+distance = zeros(12,12);
 
-if error_percentage > 10
-    disp(['Object ', num2str(i), ' is not a false negative.'])
-else
-    false_negative_count = false_negative_count + 1;
-    disp(['Object ', num2str(i), ' is a false negative.']);
-end
+% Iterate through each frame
+for i = 1:numFrame
+    % Iterate through each object in the current frame
+    for j = 1:numObjects
+        % Get position and size of the current object
+        obj_x = IDvector(j, 1, i);
+        obj_y = IDvector(j, 2, i);
+        
+        % Iterate through other objects in the same frame
+        for k = 1:numObjects
+            if i>1 
+                % Get position of the other object
+                other_obj_x = GT_table{k,4};
+                other_obj_y = GT_table{k,3};
+                
+                % Compute distance between the objects
+                distance(j,k,i) = sqrt((obj_x - other_obj_x)^2 + (obj_y - other_obj_y)^2);
+                
+                %Compute error
+                error_percentage = dist(:,j,i)/distance(:,j,i) * 100;
 
+                % Check if the distance exceeds a threshold
+                if error_percentage > 10
+                    % Increment false negative count and display message
+                    false_negative_count = false_negative_count + 1;
+                    disp(['Object ', num2str(j), ' in frame ', num2str(i), ' is too far from object ', num2str(k), '.']);
+                end
+                
+            end
         end
     end
 end
 
-disp(['There are ', num2str(false_negative_count), 'false negatives.'])
+% Display total false negatives
+disp(['Total false negatives: ', num2str(false_negative_count)]);
+
 
 %for finding peaks
 % exampleFrame=denoisedFrame(:,:,1);
