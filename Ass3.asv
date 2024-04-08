@@ -8,7 +8,7 @@ position=cell(1,numFrame);
 %initialize the image array
 frame=zeros(512,512,numFrame-1);
 %index variable copy the index in different frames
-index=zeros(numFrame,12);
+index=ones(numFrame,12);
 
 numObjects = 12;
 
@@ -23,25 +23,25 @@ GT_table = readtable("ground_truth_positions.xlsx");
 
 for i=1:numFrame
     frame(:,:,i)=imread("Simulate_movie_hw2.tif",i);
-    figure(i)
+    % figure(i)
     denoisedFrame(:,:,i)=medfilt2(frame(:,:,i), [5,5]);
     % h = [-1 -1 -1;-1 8 -1;-1 -1 -1];
     % denoisedFrame2(:,:,i) = imfilter(denoisedFrame(:,:,i),h);
     denoisedFrame2(:,:,i) = imbinarize(denoisedFrame(:,:,i)./255, 'global');
     
-    imshow(denoisedFrame2(:,:,i))
+    % imshow(denoisedFrame2(:,:,i))
     center(:,:,i) = regionprops(denoisedFrame2(:,:,i), 'centroid');
     s = regionprops(logical(denoisedFrame2(:,:,i)), 'Centroid');
     bounding = regionprops(logical(denoisedFrame2(:,:,i)), 'BoundingBox');
     ss = regionprops(logical(denoisedFrame2(:,:,i)),'BoundingBox');
-    sizes(:,:,i) = cat(1,ss.BoundingBox)
+    sizes(:,:,i) = cat(1,ss.BoundingBox);
     centroids(:,:,i) = cat(1,s.Centroid);
 
-
-    hold on
-    plot(centroids(:,1,i),centroids(:,2,i),'*b')
-    plot(table2array(GT_table(i*1:18:216,4)),table2array(GT_table(i*1:18:216,3)), '*r')
-    hold off
+    % 
+    % hold on
+    % plot(centroids(:,1,i),centroids(:,2,i),'*b')
+    % plot(table2array(GT_table(i*1:18:216,4)),table2array(GT_table(i*1:18:216,3)), '*r')
+    % hold off
     L(:,:,i) = bwlabel(logical(denoisedFrame2(:,:,i)),8);
 
     
@@ -81,16 +81,19 @@ for i=1:numFrame
     list = cat(1,list, orderedCentroids(:,:,i));
     end
 
-IDvector(:,:,i) = horzcat(orderedCentroids(:,:,i),sizes(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
+    IDvector(:,:,i) = horzcat(orderedCentroids(:,:,i),sizes(:,3:4,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
 
-        for c=2:12
+        for c=1:12
             for d = 1:12
                 if i >= 2
-                oldIDvector = IDvector(:,:,i-1);
-                newIDVector = IDvector(:,:,i);
-                oldIDobject = IDvector(c-1,:,i-1);
-                newIDobject = IDvector(c,:,i);
-                correlation_coeffs(:,:,i) = corrcoef(newIDobject,IDvector(d,:,i-1));
+                    oldIDobject = IDvector(d,:,i-1);
+                    newIDobject = IDvector(c,:,i);
+                    temp = corrcoef(newIDobject,oldIDobject);
+                    correlation_coeffs(c,d,i) = temp(1,2);
+                      
+                    indexP=find(correlation_coeffs(c,:,i)==max(correlation_coeffs(c,:,i)));
+                    index(i,j)=index(i-1,indexP);
+                    
                 end
             end    
         end
@@ -136,12 +139,19 @@ for i = 1:numFrame
 
     end
 end
-
+if any(any(any(error_pixel > 2))) && height(obj_y > other_obj_y)
+    % Increment false negative count and display message
+    false_positive_count = height(other_object_y)-height(obj_y);
+    disp(['There are ', num2str(false_positive_count), ' false positives']);
+elseif any(any(any(error_pixel > 2))) && height(obj_y < other_obj_y)
+    false_negative_count = false_negative_count +1;
+    disp(['There are ', num2str(false_negative_count), ' false negatives']);
+end
 % Display total false negatives
 disp(['Total false negatives: ', num2str(false_negative_count)]);
 
 
-%for finding peaks
+%for finding peaks  
 % exampleFrame=denoisedFrame(:,:,1);
 % p=FastPeakFind(exampleFrame);
 % imagesc(exampleFrame); hold on;

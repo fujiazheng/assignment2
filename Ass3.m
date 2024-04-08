@@ -34,14 +34,14 @@ for i=1:numFrame
     s = regionprops(logical(denoisedFrame2(:,:,i)), 'Centroid');
     bounding = regionprops(logical(denoisedFrame2(:,:,i)), 'BoundingBox');
     ss = regionprops(logical(denoisedFrame2(:,:,i)),'BoundingBox');
-    sizes(:,:,i) = cat(1,ss.BoundingBox)
+    sizes(:,:,i) = cat(1,ss.BoundingBox);
     centroids(:,:,i) = cat(1,s.Centroid);
 
 
-    hold on
-    plot(centroids(:,1,i),centroids(:,2,i),'*b')
-    plot(table2array(GT_table(i*1:18:216,4)),table2array(GT_table(i*1:18:216,3)), '*r')
-    hold off
+    % hold on
+    % plot(centroids(:,1,i),centroids(:,2,i),'*b')
+    % plot(table2array(GT_table(i*1:18:216,4)),table2array(GT_table(i*1:18:216,3)), '*r')
+    % hold off
     L(:,:,i) = bwlabel(logical(denoisedFrame2(:,:,i)),8);
 
     
@@ -54,46 +54,39 @@ for i=1:numFrame
             index(i,j)=j;
             list = orderedCentroids;
         end
+        IDvector(:,:,i) = horzcat(centroids(:,:,i),sizes(:,3:4,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
         if i > 1 
         %% Compare the distance
+        
             for k = 1:height(centroids)
                 dist(j,k,i)= sqrt((centroids(j,1,i)-centroids(k,1,i-1)).^2 + (centroids(j,2,i)-centroids(k,2,i-1)).^2);
-                k=find(dist(j,:,i)==min(dist(j,:,i)));
+                oldIDobject = IDvector(k,:,i-1);
+                newIDobject = IDvector(j,:,i);
+                temp = corrcoef(newIDobject,oldIDobject);
+                correlation_coeffs(k,j,i) = temp(1,2);
+                k=find(correlation_coeffs(j,:,i)==max(correlation_coeffs(j,:,i)))
+                
             end
             index(i,j)=index(i-1,k);
             
             
-        %% below is for correlation
-            prevObjects{i,j} = objectCrop{i-1,j};
-                for k = 1:height(centroids)
-                    size1 = size(cell2mat(objectCrop{i,k}));
-                    size0 =size(cell2mat(prevObjects{i,j}));
-                    padded1 = padarray(cell2mat(objectCrop{i,k}), ceil(([15 15]-size1)/2) , 0,'pre');
-                    padded1= padarray(padded1, floor(([15 15]-size1)/2), 0,'post');
-                    padded2 = padarray(cell2mat(prevObjects{i,j}), ceil(([15 15]-size0)/2) , 0,'pre');
-                    padded2 = padarray(padded2, floor(([15 15]-size0)/2), 0,'post');
-                    comparison(k,j,i) = corr2(padded1,padded2);
-                end
+        %% Ignore
+            % prevObjects{i,j} = objectCrop{i-1,j};
+            %     for k = 1:height(centroids)
+            %         size1 = size(cell2mat(objectCrop{i,k}));
+            %         size0 =size(cell2mat(prevObjects{i,j}));
+            %         padded1 = padarray(cell2mat(objectCrop{i,k}), ceil(([15 15]-size1)/2) , 0,'pre');
+            %         padded1= padarray(padded1, floor(([15 15]-size1)/2), 0,'post');
+            %         padded2 = padarray(cell2mat(prevObjects{i,j}), ceil(([15 15]-size0)/2) , 0,'pre');
+            %         padded2 = padarray(padded2, floor(([15 15]-size0)/2), 0,'post');
+            %         comparison(k,j,i) = corr2(padded1,padded2);
+            %     end
         end
-    end
+    end   
     if i>1
-    orderedCentroids(order,:,i) = centroids(index(i,:),:,i);
-    list = cat(1,list, orderedCentroids(:,:,i));
+        orderedCentroids(order,:,i) = centroids(index(i,:),:,i);
+        list = cat(1,list, orderedCentroids(:,:,i));
     end
-
-IDvector(:,:,i) = horzcat(orderedCentroids(:,:,i),sizes(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
-
-        for c=2:12
-            for d = 1:12
-                if i >= 2
-                oldIDvector = IDvector(:,:,i-1);
-                newIDVector = IDvector(:,:,i);
-                oldIDobject = IDvector(c-1,:,i-1);
-                newIDobject = IDvector(c,:,i);
-                correlation_coeffs(:,:,i) = corrcoef(newIDobject,IDvector(d,:,i-1));
-                end
-            end    
-        end
 end
 
 
@@ -103,7 +96,7 @@ for z=2:12
 reorder = cat(1, reorder, list(z:12:end,:));
 end
 
-
+IDvector(:,:,i) = horzcat(orderedCentroids(:,:,i),sizes(:,3:4,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
 
 errorX = ((reorder(:,1)-GT_table(:,4))./GT_table(:,4)).*100;
 errorY = ((reorder(:,2)-GT_table(:,3))./GT_table(:,3)).*100;
@@ -136,11 +129,11 @@ for i = 1:numFrame
 
     end
 end
-if any(any(any(error_pixel > 2))) && height(obj_y > other_obj_y)
+if any(any(any(error_pixel > 2))) && (height(obj_y) > height(other_obj_y))
     % Increment false negative count and display message
     false_positive_count = height(other_object_y)-height(obj_y);
     disp(['There are ', num2str(false_positive_count), ' false positives']);
-elseif any(any(any(error_pixel > 2))) && height(obj_y < other_obj_y)
+elseif any(any(any(error_pixel > 2))) && (height(obj_y) < height(other_obj_y))
     false_negative_count = false_negative_count +1;
     disp(['There are ', num2str(false_negative_count), ' false negatives']);
 end
@@ -148,7 +141,7 @@ end
 disp(['Total false negatives: ', num2str(false_negative_count)]);
 
 
-%for finding peaks
+%for finding peaks  
 % exampleFrame=denoisedFrame(:,:,1);
 % p=FastPeakFind(exampleFrame);
 % imagesc(exampleFrame); hold on;
