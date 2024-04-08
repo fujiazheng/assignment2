@@ -97,7 +97,7 @@ for avg = 1:5
             list = cat(1,list, orderedCentroids(:,:,i));
             
         end
-        newIDvector(:,:,i) = horzcat(orderedCentroids(:,:,i),sizes(:,3:4,i),circularity(:,:,i), eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
+        
     end
     
     
@@ -122,8 +122,8 @@ for avg = 1:5
         % Iterate through each object in the current frame
         for j = 1:numObjects
             % Get position and size of the current object
-            obj_x = newIDvector(:, 1, i);
-            obj_y = newIDvector(:, 2, i);
+            obj_x = IDvector(:, 1, i);
+            obj_y = IDvector(:, 2, i);
             for k = 1:numObjects
                 other_obj_x(k,1) = GT_table{1*i+(k-1)*18,4};
                 other_obj_y(k,1) = GT_table{1*i+(k-1)*18,3};
@@ -140,12 +140,11 @@ for avg = 1:5
     
         end
     end
-    if any(any(any(error_pixel > 2))) && (height(obj_y) > height(other_obj_y))
-        % Increment false negative count and display message
-        false_positive_count = height(other_object_y)-height(obj_y);
+    if any(any(any(error_pixel > 2))) && (any(obj_x ~=0) && any(other_obj_x ~= 0))
+        false_positive_count = height(any(any(any(error_pixel > 2))) && (any(obj_x ~=0)));
         disp(['There are ', num2str(false_positive_count), ' false positives']);
-    elseif any(any(any(error_pixel > 2))) && (height(obj_y) < height(other_obj_y))
-        false_negative_count = false_negative_count +1;
+    else 
+        false_negative_count = height(any(obj_x<=0));
         disp(['There are ', num2str(false_negative_count), ' false negatives']);
     end
     % Display total false negatives
