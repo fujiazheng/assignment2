@@ -22,6 +22,8 @@ for avg = 1:5
     %create a matrix to store 12 particles in different frames
     objectCrop = cell(numFrame,12);
     prevObjects = cell(numFrame-1,12);
+    %have the code read the ground truth table so it can be used to compare
+    %later on
     GT_table = readtable("ground_truth_positions.xlsx",'ReadVariableNames',false);
     
     for i=1:numFrame
@@ -47,7 +49,7 @@ for avg = 1:5
         circularity(:,:,i) = cat(1,sss.Circularity); % extract circularity of each object
         eccentricity(:,:,i) = cat(1,ssss.Eccentricity); % extract eccentricity of each object
     
-        %% Plot - we did this so we could visualize our centroids/objects
+        %% Plot - we did this so we could visualize our centroids/objects, not necessary for final code
         % figure(i)
         % imshow(denoisedFrame2(:,:,i))
         % hold on
@@ -82,32 +84,29 @@ for avg = 1:5
                     oldIDobject = IDvector(k,:,i-1);
                     newIDobject = IDvector(j,:,i);
                     temp = corrcoef(newIDobject,oldIDobject); %calculate the correlation coefficient between the new object with each particle in the previous frame
-                    correlation_coeffs(k,j,i) = temp(1,2);
+                    correlation_coeffs(k,j,i) = temp(1,2); %arrange the correlation coefficients into an array so that the max corresponding coefficient can allow for the objects to be matched in the next line of code
                     k = find(correlation_coeffs(:,j,i)==max(correlation_coeffs(:,j,i))); % dupliate the particle index of the one that has the highest correlation coefficient
                 end
                 
-                index(i,j)=index(i-1,k);
-                
-                
+                index(i,j)=index(i-1,k); %here, the index of objects is set so that the corresponding objects can be labeled using the correlation coefficients and which object matches best to the previous object in the previous frame                         
             end
         end   
         if i>1
-            orderedCentroids(order,:,i) = centroids(index(i,:),:,i);
-            list = cat(1,list, orderedCentroids(:,:,i));
-            
-        end
-        
+            orderedCentroids(order,:,i) = centroids(index(i,:),:,i); 
+            list = cat(1,list, orderedCentroids(:,:,i));            
+        end        
     end
 
     % Here we calculate the false negative and false positive values
     
     %% Error
+    %This puts the centroids in the order of the ground truth table for comparison
     reorder = list(1:12:end,:);
     for z=2:12
     reorder = cat(1, reorder, list(z:12:end,:));
     end
     
-    % Initialize false negative count
+    % Initialize false negative count amd distance array
     false_negative_count = 0;
     false_positive_count = 0;
     distance = zeros(12,1);
@@ -119,6 +118,8 @@ for avg = 1:5
             % Get position and size of the current object
             obj_x = IDvector(:, 1, i);
             obj_y = IDvector(:, 2, i);
+            % Obtain position and size of the object from the previous
+            % frame from the ground truth table
             for k = 1:numObjects
                 other_obj_x(k,1) = GT_table{1*i+(k-1)*18,4};
                 other_obj_y(k,1) = GT_table{1*i+(k-1)*18,3};
@@ -127,43 +128,28 @@ for avg = 1:5
             % Compute distance between the objects
             distance(:,:,i) = sqrt((obj_x - other_obj_x).^2 + (obj_y - other_obj_y).^2);
             
-            %Compute error
+            %Compute error in terms of how many pixels away the objects are
             error_pixel(:,:,i) = diag(distance(:,:,i));
             
-            % Check if the distance exceeds a threshold
-            
+            % Check if the distance exceeds a threshold            
     
         end
     end
+    % if the pixel distance is larger than our threshold (which can be
+    % changed depending on how precise we want to be), then it will be
+    % identified as a false positive. If there are less objects detected
+    % than are in the ground truth table, this will provide a false
+    % negative.
     if any(any(any(error_pixel > 2))) && (any(obj_x ~=0) && any(other_obj_x ~= 0))
         false_positive_count = height(any(any(any(error_pixel > 2))) && (any(obj_x ~=0)));
-        disp(['There are ', num2str(false_positive_count), ' false positives']);
+        disp(['There are ', num2str(false_positive_count), ' false positives']); %display the false positive count
     else 
         false_negative_count = height(any(obj_x<=0));
-        disp(['There are ', num2str(false_negative_count), ' false negatives']);
-    end
+        disp(['There are ', num2str(false_negative_count), ' false negatives']); %display the false negative count
+    end 
     % Display total false negatives
     disp(['Total false negatives: ', num2str(false_negative_count)]);
     
-    
-    %for finding peaks  
-    % exampleFrame=denoisedFrame(:,:,1);
-    % p=FastPeakFind(exampleFrame);
-    % imagesc(exampleFrame); hold on;
-    % plot(p(1:2:end),p(2:2:end),'r+');
-    % position=[p(1:2:end),p(2:2:end)];
-    
-    % frame_exp=frame(:,:,1);
-    % figure;
-    % imshow(uint8(frame(:,:,1)));
-    % figure;
-    % imshow(uint8(denoisedFrame(:,:,1)));
-    % figure;
-    % imshow(uint8(frame(:,:,2)));
-    % figure;
-    % imshow(uint8(denoisedFrame(:,:,2)))
-    % 
-    
 end
-ellapsedTime = toc(tStart);
-disp(['Code runtime is: ', num2str(ellapsedTime/5), ' seconds over 5 iterations'])
+ellapsedTime = toc(tStart); % the end of the tic-toc to calculate how long it took to run the program - this is our efficiency
+disp(['Code runtime is: ', num2str(ellapsedTime/5), ' seconds over 5 iterations']) % proper statement of program efficiency
