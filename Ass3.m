@@ -74,11 +74,11 @@ for avg = 1:5
                 orderedCentroids(order,:,i) = centroids(:,:,i);
                 index(i,j)=j;
                 list = orderedCentroids;
-                IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and circularity and eccentricity)
+                IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box, circularity and eccentricity)
             end
             if i > 1 
             %% Compare the correlation coefficients
-                    IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
+                    IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box, circularity and eccentricity)
             %Go through each object in the previous frame
                 for k = 1:height(centroid)
                     oldIDobject = IDvector(k,:,i-1);
