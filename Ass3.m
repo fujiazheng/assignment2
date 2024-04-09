@@ -80,7 +80,7 @@ for avg = 1:5
             %% Compare the correlation coefficients
                     IDvector(:,:,i) = horzcat(centroids(:,:,i),3.*sizes(:,3:4,i),3.*circularity(:,:,i),3.*eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box, circularity and eccentricity)
             %Go through each object in the previous frame
-                for k = 1:height(centroid)
+                for k = 1:height(centroids)
                     oldIDobject = IDvector(k,:,i-1);
                     newIDobject = IDvector(j,:,i);
                     temp = corrcoef(newIDobject,oldIDobject); %calculate the correlation coefficient between the new object with each particle in the previous frame
@@ -94,19 +94,21 @@ for avg = 1:5
         if i>1
             orderedCentroids(order,:,i) = centroids(index(i,:),:,i); 
             list = cat(1,list, orderedCentroids(:,:,i));            
-        end        
+        end
+        newIDvector(:,:,i) = horzcat(orderedCentroids(:,:,i),sizes(:,3:4,i),circularity(:,:,i),eccentricity(:,:,i)); % create ID vector with centroids (x,y pos) and sizes (x,y pos of bounding box and x,y size)
     end
+
+    
 
     % Here we calculate the false negative and false positive values
     
     %% Error
-    %This puts the centroids in the order of the ground truth table for comparison
     reorder = list(1:12:end,:);
     for z=2:12
     reorder = cat(1, reorder, list(z:12:end,:));
     end
     
-    % Initialize false negative count amd distance array
+    % Initialize false negative count
     false_negative_count = 0;
     false_positive_count = 0;
     distance = zeros(12,1);
@@ -116,10 +118,8 @@ for avg = 1:5
         % Iterate through each object in the current frame
         for j = 1:numObjects
             % Get position and size of the current object
-            obj_x = IDvector(:, 1, i);
-            obj_y = IDvector(:, 2, i);
-            % Obtain position and size of the object from the previous
-            % frame from the ground truth table
+            obj_x = newIDvector(:, 1, i);
+            obj_y = newIDvector(:, 2, i);
             for k = 1:numObjects
                 other_obj_x(k,1) = GT_table{1*i+(k-1)*18,4};
                 other_obj_y(k,1) = GT_table{1*i+(k-1)*18,3};
@@ -128,27 +128,25 @@ for avg = 1:5
             % Compute distance between the objects
             distance(:,:,i) = sqrt((obj_x - other_obj_x).^2 + (obj_y - other_obj_y).^2);
             
-            %Compute error in terms of how many pixels away the objects are
+            %Compute error
             error_pixel(:,:,i) = diag(distance(:,:,i));
             
-            % Check if the distance exceeds a threshold            
+            % Check if the distance exceeds a threshold
+            
     
         end
     end
-    % if the pixel distance is larger than our threshold (which can be
-    % changed depending on how precise we want to be), then it will be
-    % identified as a false positive. If there are less objects detected
-    % than are in the ground truth table, this will provide a false
-    % negative.
     if any(any(any(error_pixel > 2))) && (any(obj_x ~=0) && any(other_obj_x ~= 0))
         false_positive_count = height(any(any(any(error_pixel > 2))) && (any(obj_x ~=0)));
-        disp(['There are ', num2str(false_positive_count), ' false positives']); %display the false positive count
-    else 
-        false_negative_count = height(any(obj_x<=0));
-        disp(['There are ', num2str(false_negative_count), ' false negatives']); %display the false negative count
-    end 
+        disp(['There are ', num2str(false_positive_count), ' false positives']);
+    elseif any(any(any(error_pixel > 2))) && (any(obj_x ==0) && any(other_obj_x == 0))
+        false_negative_count = height(any(obj_x==0));
+        disp(['There are ', num2str(false_negative_count), ' false negatives']);
+    end
     % Display total false negatives
     disp(['Total false negatives: ', num2str(false_negative_count)]);
+    % Display total false positives
+    disp(['Total false positives: ', num2str(false_positive_count)]);
     
 end
 ellapsedTime = toc(tStart); % the end of the tic-toc to calculate how long it took to run the program - this is our efficiency
